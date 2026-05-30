@@ -59,16 +59,23 @@ class RollingGraph:
             return (0, 0)
         return (self.g.in_degree(addr), self.g.out_degree(addr))
 
+    def _undirected_neighbors(self, n: str):
+        """Undirected adjacency without materializing a whole-graph view
+        (calling to_undirected per query dominated scoring latency)."""
+        g = self.g
+        if n not in g:
+            return ()
+        return set(g._succ[n]) | set(g._pred[n])
+
     def neighbors_subgraph(self, addr: str, radius: int = 1) -> dict:
         if addr not in self.g:
             return {"nodes": [{"id": addr}], "edges": []}
-        und = self.g.to_undirected(as_view=True)
         nodes = set([addr])
         frontier = {addr}
         for _ in range(radius):
             nxt = set()
             for n in frontier:
-                nxt |= set(und.neighbors(n))
+                nxt |= self._undirected_neighbors(n)
             nodes |= nxt
             frontier = nxt
             if len(nodes) > 80:
@@ -88,13 +95,12 @@ class RollingGraph:
             return 0
         if addr not in self.g:
             return None
-        und = self.g.to_undirected(as_view=True)
         seen = {addr}
         frontier = {addr}
         for d in range(1, limit + 1):
             nxt: set[str] = set()
             for n in frontier:
-                for m in und.neighbors(n):
+                for m in self._undirected_neighbors(n):
                     if m in seen:
                         continue
                     if m in flagged:
