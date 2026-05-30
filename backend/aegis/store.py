@@ -72,6 +72,37 @@ class Store:
                                    (status, alert_id))
                 self._conn.commit()
 
+    def get_alert(self, alert_id: str) -> dict | None:
+        ph = "%s" if self._pg else "?"
+        q = (f"SELECT alert_id,txid,chain,ts,risk,level,reason,address,subgraph,"
+             f"sar_text,sar_source,status FROM alerts WHERE alert_id={ph}")
+        with self._lock:
+            if self._pg:
+                with self._conn.cursor() as cur:
+                    cur.execute(q, (alert_id,)); row = cur.fetchone()
+            else:
+                row = self._conn.execute(q, (alert_id,)).fetchone()
+        if not row:
+            return None
+        sg = row[8]
+        return {
+            "alert_id": row[0], "txid": row[1], "chain": row[2], "ts": row[3],
+            "risk": row[4], "level": row[5], "reason": row[6], "address": row[7],
+            "subgraph": sg if isinstance(sg, dict) else json.loads(sg or "{}"),
+            "sar_text": row[9], "sar_source": row[10], "status": row[11],
+        }
+
+    def set_sar(self, alert_id: str, sar_text: str, sar_source: str) -> None:
+        ph = "%s" if self._pg else "?"
+        q = f"UPDATE alerts SET sar_text={ph}, sar_source={ph} WHERE alert_id={ph}"
+        with self._lock:
+            if self._pg:
+                with self._conn.cursor() as cur:
+                    cur.execute(q, (sar_text, sar_source, alert_id))
+            else:
+                self._conn.execute(q, (sar_text, sar_source, alert_id))
+                self._conn.commit()
+
     def recent_alerts(self, limit: int = 100) -> list[dict]:
         ph = "%s" if self._pg else "?"
         q = f"SELECT alert_id,txid,chain,ts,risk,level,reason,address,subgraph,sar_text,sar_source,status FROM alerts ORDER BY ts DESC LIMIT {ph}"

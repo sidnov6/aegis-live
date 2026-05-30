@@ -66,6 +66,15 @@ export function useStream(): StreamState {
           if (msg.type === "alert") {
             return { ...s, alerts: [msg.alert, ...s.alerts].slice(0, MAX_ALERTS) };
           }
+          if (msg.type === "sar_update") {
+            return {
+              ...s,
+              alerts: s.alerts.map((a) =>
+                a.alert_id === msg.alert_id
+                  ? { ...a, sar_text: msg.sar_text, sar_source: msg.sar_source }
+                  : a),
+            };
+          }
           if (msg.type === "alert_status") {
             return {
               ...s,

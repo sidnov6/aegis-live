@@ -73,8 +73,15 @@ def _template_sar(alert: Alert, facts: dict) -> str:
     )
 
 
+def template_sar(alert: Alert, facts: dict) -> tuple[str, str]:
+    """Deterministic SAR — instant, free, always available."""
+    return _template_sar(alert, facts), "template"
+
+
 def draft_sar(alert: Alert, facts: dict) -> tuple[str, str]:
-    """Returns (sar_text, source). Falls back to template on any failure."""
+    """Returns (sar_text, source). LLM-drafted if a model is configured, else
+    template. Called ON DEMAND (when an analyst opens a case) so free-tier LLM
+    tokens are spent per human review, not per alert — sustainable + realistic."""
     if not settings.sar_model:
         return _template_sar(alert, facts), "template"
     try:

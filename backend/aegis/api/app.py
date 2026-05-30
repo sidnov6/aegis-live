@@ -58,6 +58,28 @@ async def act_on_alert(alert_id: str, action: str) -> dict:
     return {"ok": True, "alert_id": alert_id, "status": status}
 
 
+@app.post("/api/alerts/{alert_id}/sar")
+async def generate_sar(alert_id: str) -> dict:
+    """On-demand LLM SAR drafting (called when an analyst opens a case).
+
+    Spending free-tier LLM tokens per human review — not per alert — keeps the
+    deployment within free quotas and mirrors the real workflow. Falls back to
+    the already-stored template SAR on any LLM error/quota limit."""
+    from ..alerting.sar import draft_sar
+    from ..schema import Alert
+
+    rec = store.get_alert(alert_id)
+    if not rec:
+        return {"ok": False, "error": "alert not found"}
+    alert = Alert(**rec)
+    facts = {"subgraph": alert.subgraph, "features": {}}
+    text, source = await asyncio.to_thread(draft_sar, alert, facts)
+    store.set_sar(alert_id, text, source)
+    hub.broadcast({"type": "sar_update", "alert_id": alert_id,
+                   "sar_text": text, "sar_source": source})
+    return {"ok": True, "alert_id": alert_id, "sar_text": text, "sar_source": source}
+
+
 @app.get("/api/graph")
 async def get_graph() -> dict:
     """Snapshot of the rolling graph for the live network view (bounded)."""

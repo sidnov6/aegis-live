@@ -1,12 +1,38 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { levelColor, short } from "@/lib/format";
+import { API_BASE } from "@/lib/config";
 
 export default function CaseView({
   alert, onAct,
 }: { alert: any; onAct: (id: string, action: string) => Promise<void> }) {
   const [status, setStatus] = useState(alert.status);
+  const [sarText, setSarText] = useState(alert.sar_text);
+  const [sarSource, setSarSource] = useState(alert.sar_source);
+  const [drafting, setDrafting] = useState(false);
+  const requested = useRef<string | null>(null);
   const sg = alert.subgraph || { nodes: [], edges: [] };
+
+  const generateSar = async () => {
+    setDrafting(true);
+    try {
+      const r = await fetch(`${API_BASE}/api/alerts/${alert.alert_id}/sar`, { method: "POST" });
+      const d = await r.json();
+      if (d.ok) { setSarText(d.sar_text); setSarSource(d.sar_source); }
+    } catch {}
+    setDrafting(false);
+  };
+
+  // On opening a case, draft the AI SAR on demand (token-efficient — one call per
+  // human review). The template SAR is shown instantly meanwhile.
+  useEffect(() => {
+    setSarText(alert.sar_text);
+    setSarSource(alert.sar_source);
+    if (requested.current === alert.alert_id) return;
+    requested.current = alert.alert_id;
+    if (!String(alert.sar_source || "").startsWith("llm")) generateSar();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alert.alert_id]);
 
   const handle = async (action: string, newStatus: string) => {
     setStatus(newStatus);
@@ -45,11 +71,25 @@ export default function CaseView({
       </div>
 
       <div className="px-4 py-3 flex-1">
-        <div className="text-[10px] uppercase tracking-wider text-muted mb-1">
-          drafted SAR · source: {alert.sar_source}
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] uppercase tracking-wider text-muted">
+            drafted SAR · source:{" "}
+            <span className={sarSource?.startsWith("llm") ? "text-accent" : "text-muted"}>
+              {drafting ? "drafting (AI)…" : sarSource}
+            </span>
+          </span>
+          <button
+            onClick={generateSar}
+            disabled={drafting}
+            className="ml-auto text-[10px] px-2 py-0.5 rounded border border-accent/40 text-accent hover:bg-accent/10 disabled:opacity-40"
+          >
+            {drafting ? "…" : sarSource?.startsWith("llm") ? "Regenerate AI SAR" : "Generate AI SAR"}
+          </button>
         </div>
-        <pre className="text-[11px] text-ink/80 whitespace-pre-wrap bg-bg/60 border border-edge rounded p-3 leading-relaxed">
-{alert.sar_text}
+        <pre className={`text-[11px] whitespace-pre-wrap bg-bg/60 border border-edge rounded p-3 leading-relaxed ${
+          drafting ? "text-muted animate-pulse2" : "text-ink/80"
+        }`}>
+{sarText}
         </pre>
       </div>
 

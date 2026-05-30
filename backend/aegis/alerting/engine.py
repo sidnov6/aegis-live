@@ -11,7 +11,7 @@ from ..conf.settings import settings
 from ..schema import Alert, Transaction, Verdict
 from ..stream.rolling_graph import RollingGraph
 from .explain import build_explanation, primary_address
-from .sar import draft_sar
+from .sar import template_sar
 
 
 class AlertEngine:
@@ -56,7 +56,9 @@ class AlertEngine:
             address=addr,
             subgraph=facts["subgraph"],
         )
-        sar_text, source = draft_sar(alert, facts)
+        # Instant, free template SAR at creation; an LLM narrative is generated
+        # on demand when an analyst opens the case (POST /api/alerts/{id}/sar).
+        sar_text, source = template_sar(alert, facts)
         alert.sar_text = sar_text
         alert.sar_source = source
         return alert
