@@ -1,0 +1,40 @@
+# Full local stack: backend + UI (+ optional Redis for the scale path).
+#   docker compose up --build
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Live feeds on by default; demo fallback covers locked-down networks.
+      ENABLE_BTC: "true"
+      ENABLE_EXCHANGE: "true"
+      DEMO_FALLBACK: "true"
+      # Uncomment to use Redis Streams as the bus (scale path):
+      # REDIS_URL: "redis://redis:6379"
+      # Uncomment + set a model for LLM SARs (else deterministic template):
+      # SAR_MODEL: "groq/llama-3.1-70b-versatile"
+      # GROQ_API_KEY: "..."
+    volumes:
+      - aegis-data:/app/data
+
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE: "http://localhost:8000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  # Optional scale path — uncomment REDIS_URL above to use it.
+  # redis:
+  #   image: redis:7-alpine
+  #   ports: ["6379:6379"]
+
+volumes:
+  aegis-data:

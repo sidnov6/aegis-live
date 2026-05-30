@@ -1,0 +1,22 @@
+name: Nightly — refresh sanctions lists
+on:
+  schedule:
+    - cron: "17 3 * * *"   # 03:17 UTC nightly
+  workflow_dispatch:
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install httpx pydantic
+      - name: Refresh OFAC lists
+        run: PYTHONPATH=backend python -m aegis.lists.refresh
+      - name: Commit refreshed lists
+        run: |
+          git config user.name "aegis-bot"
+          git config user.email "bot@aegis.local"
+          git add lists/ || true
+          git commit -m "chore: nightly OFAC list refresh" || echo "no changes"
+          git push || echo "nothing to push"

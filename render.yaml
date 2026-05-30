@@ -1,0 +1,22 @@
+# Render.com free-tier deploy (backend service). UI deploys to Vercel.
+# Connect this repo in Render and it picks up this blueprint.
+services:
+  - type: web
+    name: aegis-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: ENABLE_BTC
+        value: "true"
+      - key: ENABLE_EXCHANGE
+        value: "true"
+      - key: DEMO_FALLBACK
+        value: "true"
+      # Optional managed services (set in the Render dashboard):
+      # - key: REDIS_URL        # Upstash Redis
+      # - key: DATABASE_URL     # Supabase/Neon Postgres
+      # - key: SAR_MODEL        # e.g. groq/llama-3.1-70b-versatile
+      # - key: GROQ_API_KEY
