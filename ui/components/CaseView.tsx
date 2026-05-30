@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { levelColor, short } from "@/lib/format";
+import { levelChip, levelColor, short } from "@/lib/format";
 import { API_BASE } from "@/lib/config";
 
 export default function CaseView({
@@ -12,6 +12,7 @@ export default function CaseView({
   const [drafting, setDrafting] = useState(false);
   const requested = useRef<string | null>(null);
   const sg = alert.subgraph || { nodes: [], edges: [] };
+  const isLlm = String(sarSource || "").startsWith("llm");
 
   const generateSar = async () => {
     setDrafting(true);
@@ -23,8 +24,7 @@ export default function CaseView({
     setDrafting(false);
   };
 
-  // On opening a case, draft the AI SAR on demand (token-efficient — one call per
-  // human review). The template SAR is shown instantly meanwhile.
+  // On opening a case, draft the AI SAR on demand (one LLM call per human review).
   useEffect(() => {
     setSarText(alert.sar_text);
     setSarSource(alert.sar_source);
@@ -39,74 +39,77 @@ export default function CaseView({
     await onAct(alert.alert_id, action);
   };
 
+  const Btn = ({ onClick, children, variant }: any) => (
+    <button onClick={onClick}
+      className={
+        variant === "primary"
+          ? "px-3.5 py-2 text-xs font-medium rounded-lg bg-accent text-white hover:opacity-90 transition"
+          : variant === "ok"
+          ? "px-3.5 py-2 text-xs font-medium rounded-lg bg-pos/10 text-pos border border-pos/30 hover:bg-pos/20 transition"
+          : "px-3.5 py-2 text-xs font-medium rounded-lg border border-line text-muted hover:text-fg hover:bg-surface2 transition"
+      }>
+      {children}
+    </button>
+  );
+
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
-      <div className="px-4 py-3 border-b border-edge">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="px-5 py-4 border-b border-line">
         <div className="flex items-center gap-2">
-          <span className={`text-sm font-semibold ${levelColor[alert.level]}`}>
-            {alert.level.toUpperCase()} · risk {(alert.risk * 100).toFixed(0)}
+          <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded ${levelChip[alert.level]}`}>
+            {alert.level}
           </span>
-          <span className="text-[10px] text-muted ml-auto uppercase">case {alert.alert_id}</span>
+          <span className="text-sm font-semibold tabular text-fg">risk {(alert.risk * 100).toFixed(0)}%</span>
+          <span className="text-[11px] text-muted ml-auto uppercase tracking-wide">case {alert.alert_id}</span>
         </div>
-        <div className="text-xs mono text-ink/80 mt-1">{alert.address}</div>
+        <div className="mono text-xs text-fg/80 mt-2">{alert.address}</div>
         <div className={`text-xs mt-1 ${levelColor[alert.level]}`}>{alert.reason}</div>
       </div>
 
-      <div className="px-4 py-3 border-b border-edge">
-        <div className="text-[10px] uppercase tracking-wider text-muted mb-1">triggering subgraph</div>
-        <div className="text-xs text-ink/70">
-          {sg.nodes?.length || 0} addresses · {sg.edges?.length || 0} transfers
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-5 py-4 border-b border-line">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted mb-2">
+            Triggering subgraph · {sg.nodes?.length || 0} addresses · {sg.edges?.length || 0} transfers
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            {(sg.nodes || []).slice(0, 12).map((n: any) => (
+              <div key={n.id} className="flex items-center gap-2 text-[11px]">
+                <span className={n.flagged ? "text-sanction" : n.subject ? "text-accent" : "text-muted"}>
+                  {n.flagged ? "⚠" : n.subject ? "◉" : "·"}
+                </span>
+                <span className="mono text-fg/70 truncate">{short(n.id, 10)}</span>
+                {n.flagged && <span className="text-sanction text-[10px] font-medium">FLAGGED</span>}
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="mt-2 max-h-28 overflow-y-auto text-[11px] mono space-y-0.5">
-          {(sg.nodes || []).slice(0, 12).map((n: any) => (
-            <div key={n.id} className="flex items-center gap-2">
-              <span className={n.flagged ? "text-sanctioned" : n.subject ? "text-accent" : "text-muted"}>
-                {n.flagged ? "⚠" : n.subject ? "◉" : "·"}
-              </span>
-              <span className="text-ink/70">{short(n.id, 10)}</span>
-              {n.flagged && <span className="text-sanctioned text-[10px]">FLAGGED</span>}
-            </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="px-4 py-3 flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] uppercase tracking-wider text-muted">
-            drafted SAR · source:{" "}
-            <span className={sarSource?.startsWith("llm") ? "text-accent" : "text-muted"}>
-              {drafting ? "drafting (AI)…" : sarSource}
+        <div className="px-5 py-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+              Suspicious Activity Report
             </span>
-          </span>
-          <button
-            onClick={generateSar}
-            disabled={drafting}
-            className="ml-auto text-[10px] px-2 py-0.5 rounded border border-accent/40 text-accent hover:bg-accent/10 disabled:opacity-40"
-          >
-            {drafting ? "…" : sarSource?.startsWith("llm") ? "Regenerate AI SAR" : "Generate AI SAR"}
-          </button>
-        </div>
-        <pre className={`text-[11px] whitespace-pre-wrap bg-bg/60 border border-edge rounded p-3 leading-relaxed ${
-          drafting ? "text-muted animate-pulse2" : "text-ink/80"
-        }`}>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded ${isLlm ? "bg-accent/10 text-accent" : "bg-surface2 text-muted"}`}>
+              {drafting ? "drafting…" : isLlm ? "AI-drafted" : "template"}
+            </span>
+            <button onClick={generateSar} disabled={drafting}
+              className="ml-auto text-[11px] font-medium px-2.5 py-1 rounded-lg border border-accent/40 text-accent hover:bg-accent/10 disabled:opacity-40 transition">
+              {drafting ? "…" : isLlm ? "Regenerate" : "Generate AI SAR"}
+            </button>
+          </div>
+          <pre className={`text-[11px] whitespace-pre-wrap rounded-lg border border-line p-4 leading-relaxed font-sans ${
+            drafting ? "text-muted shimmer" : "text-fg/80 bg-surface2"
+          }`}>
 {sarText}
-        </pre>
+          </pre>
+        </div>
       </div>
 
-      <div className="px-4 py-3 border-t border-edge flex gap-2 sticky bottom-0 bg-panel">
-        <button
-          onClick={() => handle("approve", "approved")}
-          className="px-3 py-1.5 text-xs rounded bg-cleared/20 text-cleared border border-cleared/40 hover:bg-cleared/30"
-        >Approve</button>
-        <button
-          onClick={() => handle("file", "filed")}
-          className="px-3 py-1.5 text-xs rounded bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30"
-        >File SAR</button>
-        <button
-          onClick={() => handle("dismiss", "dismissed")}
-          className="px-3 py-1.5 text-xs rounded bg-panel2 text-muted border border-edge hover:text-ink"
-        >Dismiss</button>
-        <span className="ml-auto text-xs self-center text-accent uppercase">{status}</span>
+      <div className="px-5 py-3 border-t border-line flex items-center gap-2 bg-surface">
+        <Btn variant="ok" onClick={() => handle("approve", "approved")}>Approve</Btn>
+        <Btn variant="primary" onClick={() => handle("file", "filed")}>File SAR</Btn>
+        <Btn onClick={() => handle("dismiss", "dismissed")}>Dismiss</Btn>
+        <span className="ml-auto text-[11px] font-medium uppercase tracking-wide text-accent">{status}</span>
       </div>
     </div>
   );

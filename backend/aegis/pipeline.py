@@ -86,6 +86,7 @@ class Pipeline:
         # Scoring consumers + periodic adapters
         self.tasks.append(asyncio.create_task(self._scoring_loop()))
         self.tasks.append(asyncio.create_task(self._adapt_loop()))
+        self.tasks.append(asyncio.create_task(self._health_loop()))
         log.info("Pipeline started with %d tasks", len(self.tasks))
 
     async def _demo_watchdog(self, on_tx) -> None:
@@ -130,6 +131,14 @@ class Pipeline:
         while not self.stop.is_set():
             await asyncio.sleep(2)
             self.bus.adapt_sampling()
+
+    async def _health_loop(self) -> None:
+        """Push live metrics to all clients on a timer. Without this the counters
+        only refresh on the WS idle heartbeat, which never fires under a busy
+        stream — so the stat cards would appear frozen."""
+        while not self.stop.is_set():
+            await asyncio.sleep(2)
+            self.hub.broadcast({"type": "health", **self.health()})
 
     async def shutdown(self) -> None:
         self.stop.set()

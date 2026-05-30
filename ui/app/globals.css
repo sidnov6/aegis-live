@@ -2,23 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---- Theme tokens (RGB channels) ------------------------------------------ */
+:root {
+  --bg: 247 248 251;
+  --surface: 255 255 255;
+  --surface-2: 248 249 252;
+  --line: 232 234 242;
+  --fg: 23 28 46;
+  --muted: 108 117 140;
+  --accent: 99 91 255;        /* Stripe indigo #635BFF */
+  --accent-soft: 238 237 255;
+  --pos: 13 165 122;
+  --neg: 224 49 73;
+  --warn: 200 138 10;
+  --danger: 224 49 73;
+  --sanction: 219 26 90;
+}
+
+[data-theme="dark"] {
+  --bg: 9 12 22;
+  --surface: 17 21 36;
+  --surface-2: 22 27 45;
+  --line: 36 43 66;
+  --fg: 228 232 244;
+  --muted: 140 149 173;
+  --accent: 124 117 255;
+  --accent-soft: 32 33 70;
+  --pos: 45 206 156;
+  --neg: 248 113 113;
+  --warn: 245 183 49;
+  --danger: 248 113 113;
+  --sanction: 244 63 110;
+}
+
 html, body { height: 100%; }
 body {
-  background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(25,211,218,0.06), transparent),
-    #080b10;
-  color: #c7d2e0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #1c2533; border-radius: 4px; }
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: rgb(var(--line)); border-radius: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(28,37,51,0.4) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(28,37,51,0.4) 1px, transparent 1px);
-  background-size: 28px 28px;
+/* The signature Stripe-style angled gradient, used sparingly in the header. */
+.brand-gradient {
+  background-image: linear-gradient(
+    100deg,
+    rgb(var(--accent)) 0%,
+    #8a6bff 38%,
+    #00b3ff 72%,
+    #11d6c2 100%
+  );
 }
-.mono { font-variant-ligatures: none; }
+.brand-text {
+  background: linear-gradient(100deg, rgb(var(--accent)), #00a8ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tabular { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono), ui-monospace, monospace; font-variant-ligatures: none; }
+
+/* subtle skeleton shimmer for the "drafting" state */
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgb(var(--accent) / 0.08), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}

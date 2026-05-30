@@ -1,41 +1,55 @@
 import type { Config } from "tailwindcss";
 
+// Colors are CSS variables (RGB channels) so the same classes flip between the
+// light and dark themes. Opacity modifiers work via the <alpha-value> hook.
+const v = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
 const config: Config = {
+  darkMode: ["class", '[data-theme="dark"]'],
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        bg: "#080b10",
-        panel: "#0d1219",
-        panel2: "#111824",
-        edge: "#1c2533",
-        ink: "#c7d2e0",
-        muted: "#5b6878",
-        accent: "#19d3da",        // single accent (cyan)
-        cleared: "#2ee6a6",       // green
-        elevated: "#f5b942",      // amber
-        high: "#ff5a4d",          // red
-        sanctioned: "#ff2b6d",    // hot red/magenta
-        scoring: "#4d9bff",       // blue
+        bg: v("bg"),
+        surface: v("surface"),
+        surface2: v("surface-2"),
+        line: v("line"),
+        fg: v("fg"),
+        muted: v("muted"),
+        accent: v("accent"),
+        accentSoft: v("accent-soft"),
+        pos: v("pos"),
+        neg: v("neg"),
+        warn: v("warn"),
+        danger: v("danger"),
+        sanction: v("sanction"),
       },
       fontFamily: {
-        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+      },
+      borderRadius: { xl: "0.75rem", "2xl": "1rem" },
+      boxShadow: {
+        card: "0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06)",
+        cardhover: "0 4px 12px rgb(16 24 40 / 0.08), 0 2px 6px rgb(16 24 40 / 0.06)",
+        pop: "0 12px 32px rgb(16 24 40 / 0.12)",
       },
       keyframes: {
         bloom: {
-          "0%": { boxShadow: "0 0 0 0 rgba(255,43,109,0.7)" },
-          "100%": { boxShadow: "0 0 0 18px rgba(255,43,109,0)" },
+          "0%": { boxShadow: "0 0 0 0 rgb(var(--sanction) / 0.5)" },
+          "100%": { boxShadow: "0 0 0 22px rgb(var(--sanction) / 0)" },
         },
-        slidein: {
-          "0%": { transform: "translateY(-6px)", opacity: "0" },
+        rowin: {
+          "0%": { transform: "translateY(-4px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
-        pulse2: { "50%": { opacity: "0.5" } },
+        breathe: { "50%": { opacity: "0.45" } },
+        shimmer: { "100%": { transform: "translateX(100%)" } },
       },
       animation: {
-        bloom: "bloom 1.1s ease-out 1",
-        slidein: "slidein 0.18s ease-out",
-        pulse2: "pulse2 1.6s ease-in-out infinite",
+        bloom: "bloom 1.2s ease-out 1",
+        rowin: "rowin 0.16s ease-out",
+        breathe: "breathe 1.8s ease-in-out infinite",
       },
     },
   },

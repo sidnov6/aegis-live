@@ -1,20 +1,26 @@
 export const levelColor: Record<string, string> = {
-  cleared: "text-cleared",
-  elevated: "text-elevated",
-  high: "text-high",
-  sanctioned: "text-sanctioned",
+  cleared: "text-pos",
+  elevated: "text-warn",
+  high: "text-danger",
+  sanctioned: "text-sanction",
 };
 export const levelDot: Record<string, string> = {
-  cleared: "bg-cleared",
-  elevated: "bg-elevated",
-  high: "bg-high",
-  sanctioned: "bg-sanctioned",
+  cleared: "bg-pos",
+  elevated: "bg-warn",
+  high: "bg-danger",
+  sanctioned: "bg-sanction",
 };
 export const levelBorder: Record<string, string> = {
-  cleared: "border-l-cleared",
-  elevated: "border-l-elevated",
-  high: "border-l-high",
-  sanctioned: "border-l-sanctioned",
+  cleared: "border-l-pos",
+  elevated: "border-l-warn",
+  high: "border-l-danger",
+  sanctioned: "border-l-sanction",
+};
+export const levelChip: Record<string, string> = {
+  cleared: "bg-pos/10 text-pos",
+  elevated: "bg-warn/10 text-warn",
+  high: "bg-danger/10 text-danger",
+  sanctioned: "bg-sanction/10 text-sanction",
 };
 
 export function short(addr: string, n = 6): string {
