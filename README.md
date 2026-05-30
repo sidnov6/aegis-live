@@ -1,6 +1,16 @@
 # AEGIS Live — Real-Time Streaming AML Detection
 ### Codename `STROMWACHE` · Free-tier · Real-time · Finance-only
 
+> ### 🟢 Live demo
+> - **Surveillance Wall (UI):** https://ui-kappa-kohl.vercel.app
+> - **Backend API:** https://sidnov6-aegis-live-backend.hf.space/api/health
+> - **Live stream (WebSocket):** `wss://sidnov6-aegis-live-backend.hf.space/ws`
+>
+> The backend ingests the **real Bitcoin mempool** live (Coinbase drives the price
+> ticker / USD values). Free-tier hosts sleep when idle — the first load may take a
+> few seconds to wake the Space.
+
+
 A live wall of real cryptocurrency transactions streaming onto your screen, each
 scored for money-laundering risk **the instant it arrives**. The ticker moves, the
 throughput counter climbs, the network graph grows, and when a transaction touches
