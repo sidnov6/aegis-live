@@ -16,7 +16,7 @@ export default function CaseView({
   const generateSar = async () => {
     setDrafting(true);
     try {
-      const r = await fetch(`${API_BASE}/api/alerts/${alert.alert_id}/sar`, { method: "POST" });
+      const r = await fetch(`${API_BASE}/api/sar/${alert.alert_id}`, { method: "POST" });
       const d = await r.json();
       if (d.ok) { setSarText(d.sar_text); setSarSource(d.sar_source); }
     } catch {}

@@ -57,7 +57,7 @@ class AlertEngine:
             subgraph=facts["subgraph"],
         )
         # Instant, free template SAR at creation; an LLM narrative is generated
-        # on demand when an analyst opens the case (POST /api/alerts/{id}/sar).
+        # on demand when an analyst opens the case (POST /api/sar/{id}).
         sar_text, source = template_sar(alert, facts)
         alert.sar_text = sar_text
         alert.sar_source = source

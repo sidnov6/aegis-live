@@ -58,7 +58,7 @@ async def act_on_alert(alert_id: str, action: str) -> dict:
     return {"ok": True, "alert_id": alert_id, "status": status}
 
 
-@app.post("/api/alerts/{alert_id}/sar")
+@app.post("/api/sar/{alert_id}")
 async def generate_sar(alert_id: str) -> dict:
     """On-demand LLM SAR drafting (called when an analyst opens a case).
 
