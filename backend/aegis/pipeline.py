@@ -117,6 +117,8 @@ class Pipeline:
                 "n_in": tx.n_in, "n_out": tx.n_out,
                 "risk": verdict.risk, "level": verdict.level,
                 "reason": verdict.reason, "latency_ms": verdict.latency_ms,
+                "model_score": verdict.model_score,
+                "anomaly_score": verdict.anomaly_score,
                 "sanctions_hit": verdict.sanctions_hit,
                 "inputs": tx.inputs[:6], "outputs": tx.outputs[:6],
             })

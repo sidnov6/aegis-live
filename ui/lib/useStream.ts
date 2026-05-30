@@ -7,6 +7,7 @@ export type Tx = {
   txid: string; chain: string; ts: number;
   value: number; value_usd: number; n_in: number; n_out: number;
   risk: number; level: string; reason: string; latency_ms: number;
+  model_score: number; anomaly_score: number;
   sanctions_hit: boolean; inputs: string[]; outputs: string[];
 };
 export type AlertMsg = { type: "alert"; alert: any };
