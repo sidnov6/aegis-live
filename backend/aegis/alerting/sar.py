@@ -16,6 +16,9 @@ from ..schema import Alert
 
 log = logging.getLogger("aegis.sar")
 
+# Last LLM failure reason (surfaced via /api/health for diagnostics).
+LAST_ERROR: str = ""
+
 _SYSTEM = (
     "You are an AML analyst drafting a Suspicious Activity Report (SAR) narrative "
     "for a crypto transaction monitoring system. Write a concise, professional, "
@@ -88,7 +91,10 @@ def draft_sar(alert: Alert, facts: dict) -> tuple[str, str]:
             max_tokens=600,
         )
         text = resp["choices"][0]["message"]["content"].strip()
+        global LAST_ERROR
+        LAST_ERROR = ""
         return text, f"llm:{settings.sar_model}"
     except Exception as e:  # noqa: BLE001
+        globals()["LAST_ERROR"] = f"{type(e).__name__}: {e}"
         log.warning("SAR LLM failed (%s) — template fallback", e)
         return _template_sar(alert, facts), "template"

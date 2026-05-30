@@ -150,6 +150,7 @@ class Pipeline:
             "sanctions_count": len(sanctions.flagged),
             "sanctions_sources": sanctions.loaded_from,
             "sar_mode": settings.sar_model or "template",
+            "sar_last_error": __import__("aegis.alerting.sar", fromlist=["LAST_ERROR"]).LAST_ERROR,
             "clients": self.hub.client_count,
             "sample_rate": round(self.bus.sample_rate, 3),
         }
