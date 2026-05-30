@@ -34,47 +34,56 @@ np.random.seed(7)
 # --------------------------------------------------------------------------- #
 # Synthetic AMLSim-style generator expressed in live features.
 # --------------------------------------------------------------------------- #
+def _nz(x: float, frac: float = 0.15, floor: float = 0.0) -> float:
+    """Multiplicative + additive Gaussian noise — blurs the archetypes so the two
+    classes OVERLAP. Without overlap the model is perfectly separable and emits
+    only 0/1 probabilities (flat-looking, PR-AUC=1.0). Overlap => calibrated
+    continuous P(illicit), which is both more realistic and more legible on the UI."""
+    return max(floor, x * (1 + random.gauss(0, frac)) + random.gauss(0, 0.4))
+
+
 def _licit_row() -> list[float]:
     value = random.expovariate(1 / 0.4)
-    n_in = random.choice([1, 1, 1, 2])
-    n_out = random.choice([1, 2, 2])
+    # ~20% of legit txs show mild structure (exchange batching / consolidation) so
+    # they sit near the decision boundary rather than trivially separable.
+    bumpy = random.random() < 0.20
+    n_in = random.choice([1, 1, 1, 2, 3] if bumpy else [1, 1, 1, 2])
+    n_out = random.choice([2, 3, 4, 5] if bumpy else [1, 2, 2])
     return _row(value, n_in, n_out,
-                src_in=random.randint(0, 2), src_out=random.randint(0, 3),
-                dst_in=random.randint(0, 3), dst_out=random.randint(0, 2),
-                max_out=random.randint(0, 3), max_in=random.randint(0, 3),
+                src_in=_nz(random.randint(0, 3)), src_out=_nz(random.randint(0, 3)),
+                dst_in=_nz(random.randint(0, 3)), dst_out=_nz(random.randint(0, 2)),
+                max_out=_nz(random.randint(0, 4) + (3 if bumpy else 0)),
+                max_in=_nz(random.randint(0, 3)),
                 fee=value * random.uniform(0.0005, 0.002),
-                pass_through=random.random() < 0.05)
+                pass_through=1.0 if random.random() < (0.15 if bumpy else 0.05) else 0.0)
 
 
 def _illicit_row() -> list[float]:
+    # `strength` in [0,1] scales how pronounced the laundering structure is. Weak
+    # cases look almost licit; strong cases are textbook typologies. This produces
+    # a smooth gradient of suspicion instead of a hard step.
+    strength = random.random()
     typ = random.choice(["fanout", "fanin", "peeling", "passthrough"])
+    span = lambda lo, hi: lo + strength * (hi - lo)
     if typ == "fanout":                       # distributor / smurfing
-        n_in, n_out = 1, random.randint(8, 25)
-        max_out = n_out
-        max_in = random.randint(0, 2)
-        pt = True
+        n_in, n_out = 1, max(2, round(span(3, 25)))
+        max_out, max_in = n_out, random.randint(0, 2)
     elif typ == "fanin":                      # collector
-        n_in, n_out = random.randint(8, 25), 1
-        max_in = n_in
-        max_out = random.randint(0, 2)
-        pt = True
-    elif typ == "peeling":                    # long peel chain
+        n_in, n_out = max(2, round(span(3, 25))), 1
+        max_in, max_out = n_in, random.randint(0, 2)
+    elif typ == "peeling":                    # peel chain
         n_in, n_out = 1, 2
-        max_out = random.randint(4, 10)
-        max_in = random.randint(2, 6)
-        pt = True
+        max_out, max_in = round(span(2, 10)), round(span(1, 6))
     else:                                     # pass-through layering
         n_in, n_out = random.choice([1, 2]), random.choice([1, 2])
-        max_out = random.randint(3, 8)
-        max_in = random.randint(3, 8)
-        pt = True
+        max_out, max_in = round(span(2, 8)), round(span(2, 8))
     value = random.uniform(0.5, 12)
     return _row(value, n_in, n_out,
-                src_in=random.randint(1, 6), src_out=random.randint(1, 6),
-                dst_in=random.randint(1, 6), dst_out=random.randint(1, 6),
-                max_out=max_out, max_in=max_in,
+                src_in=_nz(span(0, 6)), src_out=_nz(span(0, 6)),
+                dst_in=_nz(span(0, 6)), dst_out=_nz(span(0, 6)),
+                max_out=_nz(max_out), max_in=_nz(max_in),
                 fee=value * random.uniform(0.0001, 0.001),
-                pass_through=pt)
+                pass_through=1.0 if random.random() < (0.3 + 0.6 * strength) else 0.0)
 
 
 def _row(value, n_in, n_out, *, src_in, src_out, dst_in, dst_out,
@@ -87,12 +96,12 @@ def _row(value, n_in, n_out, *, src_in, src_out, dst_in, dst_out,
         "dst_in_deg": dst_in, "dst_out_deg": dst_out,
         "max_out_deg": max_out, "max_in_deg": max_in,
         "fee_ratio": fee / value if value > 0 else 0,
-        "pass_through": 1.0 if pass_through else 0.0,
+        "pass_through": float(pass_through),
     }
     return [float(feats[n]) for n in FEATURE_NAMES]
 
 
-def synth_dataset(n: int = 60000, illicit_frac: float = 0.02):
+def synth_dataset(n: int = 80000, illicit_frac: float = 0.02):
     X, y = [], []
     for _ in range(n):
         if random.random() < illicit_frac:
